@@ -1,0 +1,5 @@
+SELECT ?children ?childrenLabel ?twitter_id WHERE {
+  wd:Q1450662 ((wdt:P355*)/(wdt:P527*)) ?children.
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],fr". }
+  ?children wdt:P2002 ?twitter_id.
+}

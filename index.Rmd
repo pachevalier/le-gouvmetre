@@ -1,0 +1,67 @@
+---
+title: "Le Gouvmètre"
+output: 
+  flexdashboard::flex_dashboard:
+    vertical_layout: scroll
+---
+
+Twitter {data-icon="fa-tachometer"}
+=====================================
+
+Row {data-height=1000}
+-------------------------------------
+
+### Nombre de followers
+
+```{bash, echo=FALSE, message=FALSE, warning=FALSE}
+curl -G https://query.wikidata.org/bigdata/namespace/wdq/sparql --data-urlencode query="$(< twitter_query.sparql)" -H 'Accept: text/csv' > twitter_datasets.csv
+```
+
+```{r, echo=FALSE, message=FALSE}
+library("tidyverse")
+library("lubridate")
+library('rtweet')
+library('DT')
+
+liste_comptes <- read_csv("twitter_datasets.csv") %>% 
+  distinct() %>%
+  pluck("twitter_id")
+
+tbl_twitter <- lookup_users(
+  users = liste_comptes
+  ) %>% 
+  select(user_id, screen_name, followers_count) 
+
+read_csv(file = "twitter_datasets.csv") %>%
+  distinct() %>%
+  inner_join(
+    y = tbl_twitter, 
+    by = c("twitter_id" = "screen_name")
+    ) %>% 
+  arrange(desc(followers_count)) %>%
+  select(
+    wikidata_uri = children, 
+    wikidata_frlabel = childrenLabel, 
+    twitter_id, 
+    followers_count
+    ) %>%
+  write_csv("twitter_followers.csv")
+```
+
+```{r}
+read_csv("twitter_followers.csv") %>% 
+  mutate(
+    wikidata = 
+      paste0("<a href = \"", wikidata_uri, "\">", wikidata_frlabel, "</a>"), 
+    twitter = paste0("<a href = \"https://twitter.com/", twitter_id , "\">", twitter_id  ,"</a>")
+    ) %>%
+  select(wikidata, twitter, followers_count) %>%
+  datatable(.,
+      filter = 'top', 
+      options = list(
+        pageLength = 20, 
+        autoWidth = TRUE), 
+      escape = FALSE
+      ) 
+```
+
